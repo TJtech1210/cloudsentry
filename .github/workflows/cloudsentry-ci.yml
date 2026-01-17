@@ -1,7 +1,6 @@
 name: Cloud_Sentry Actions
 on: 
   push:
-    types: [opened]
 jobs: 
   my_first_job:
     name: Cloud Scan
