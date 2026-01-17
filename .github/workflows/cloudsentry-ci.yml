@@ -1,6 +1,6 @@
 name: Cloud_Sentry Actions
 on: 
-  pull_request:
+  push:
     types: [opened]
 jobs: 
   my_first_job:
