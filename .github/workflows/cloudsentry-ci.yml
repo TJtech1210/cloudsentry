@@ -1,1 +1,11 @@
-
+name: Cloud_Sentry Actions
+on: 
+  pull_request:
+    types: [opened]
+jobs: 
+  my_first_job:
+    name: Cloud Scan
+    runs-on: ubuntu-latest
+    steps:
+    -
+      run: ls
