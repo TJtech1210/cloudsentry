@@ -3,6 +3,10 @@ import boto3
 import sys
 USE_MOCK_IAM = True
 
+if not USE_MOCK_IAM:
+    import boto3
+    iam = boto3.client("iam")
+
 if USE_MOCK_IAM:
     response = {
         "Users": [
