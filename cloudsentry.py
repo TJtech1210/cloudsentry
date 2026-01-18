@@ -26,7 +26,6 @@ if high_risk_exists:
 else:
   sys.exit(0)
 
-aws configure
 
 
 
