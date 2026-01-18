@@ -1,6 +1,6 @@
 # TODO: Replace fake findings with IAM user data using boto3
 import sys
-USE_MOCK_IAM = True
+USE_MOCK_IAM = False
 
 if not USE_MOCK_IAM:
     import boto3
