@@ -1,5 +1,5 @@
 import sys
-high_risk_exists = False
+high_risk_exists = True
 
 if high_risk_exists:
   print("High risk finding detected")
