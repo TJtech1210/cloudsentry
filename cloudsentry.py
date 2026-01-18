@@ -1,6 +1,19 @@
 # TODO: Replace fake findings with IAM user data using boto3
 import boto3
 import sys
+USE_MOCK_IAM = True
+
+if USE_MOCK_IAM:
+    response = {
+        "Users": [
+            {"UserName": "test-user-1"},
+            {"UserName": "test-user-2"}
+        ]
+    }
+else:
+    response = iam.list_users()
+
+
 iam = boto3.client("iam")
 
 response = iam.list_users()
