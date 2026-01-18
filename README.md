@@ -1,4 +1,4 @@
-##🛡️ CloudSentry
+## 🛡️ CloudSentry
 
 CloudSentry is a CI-based cloud security gate that analyzes AWS IAM state using Python and Boto3 and enforces pass/fail decisions automatically through GitHub Actions.
 
