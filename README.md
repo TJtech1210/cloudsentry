@@ -1,40 +1,40 @@
-🛡️ CloudSentry
+##🛡️ CloudSentry
 
 CloudSentry is a CI-based cloud security gate that analyzes AWS IAM state using Python and Boto3 and enforces pass/fail decisions automatically through GitHub Actions.
 
 🔍 What CloudSentry Does
 
-Runs automatically in GitHub Actions
+-Runs automatically in GitHub Actions
 
-Uses Python to analyze AWS IAM (read-only)
+-Uses Python to analyze AWS IAM (read-only)
 
-Generates security findings
+-Generates security findings
 
-Fails CI when high-risk conditions are detected
+-Fails CI when high-risk conditions are detected
 
-Blocks insecure changes before they reach production
+-Blocks insecure changes before they reach production
 
-🧠 How It Works
+#🧠 How It Works
 
-A developer pushes code or opens a pull request
+-A developer pushes code or opens a pull request
 
-GitHub Actions starts a CI job on a Linux runner
+-GitHub Actions starts a CI job on a Linux runner
 
-The repository is checked out
+-The repository is checked out
 
-cloudsentry.py runs
+-cloudsentry.py runs
 
-CloudSentry queries AWS IAM using Boto3
+-CloudSentry queries AWS IAM using Boto3
 
-Findings are generated
+-Findings are generated
 
-A decision is made:
+-A decision is made:
 
-High risk → CI fails
+-High risk → CI fails
 
-No high risk → CI passes
+-No high risk → CI passes
 
-🧱 Architecture Overview
+#🧱 Architecture Overview
 Developer
   ↓
 GitHub Repository
@@ -51,7 +51,7 @@ Decision Gate
   ├─ sys.exit(1) → CI FAIL
   └─ sys.exit(0) → CI PASS
 
-🚦 Security Logic (Current Rule)
+#🚦 Security Logic (Current Rule)
 
 CloudSentry fails CI if any finding contains the string:
 
@@ -73,7 +73,7 @@ iam:ListUsers
 
 AWS credentials are provided securely via GitHub Secrets.
 
-🛠️ Tools Used
+#🛠️ Tools Used
 
 Python
 
@@ -87,7 +87,7 @@ Linux (CI runner)
 
 GitHub Secrets
 
-🚀 Project Status
+#🚀 Project Status
 
 ✅ CI pipeline working
 
