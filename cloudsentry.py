@@ -1,5 +1,5 @@
 import sys
-findings = ["PII", "MFA", "Weak Credentials"] 
+findings = ["PII", "MFA", "Weak Credentials, "High risk: Weak Credentials"] 
 high_risk_exists = False
 
 for finding in findings:
