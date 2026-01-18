@@ -1,34 +1,110 @@
-# CloudSentry
+🛡️ CloudSentry
 
-CloudSentry is a lightweight cloud security checker that runs automatically in CI to catch risky behavior early.
+CloudSentry is a CI-based cloud security gate that analyzes AWS IAM state using Python and Boto3 and enforces pass/fail decisions automatically through GitHub Actions.
 
-## What it does (v1)
-CloudSentry analyzes cloud-related data, prints a security report, and fails the build if risk is detected.
+🔍 What CloudSentry Does
 
-This project focuses on:
-- automation over dashboards
-- early detection instead of cleanup
-- simple rules that are easy to explain
+Runs automatically in GitHub Actions
 
-## Why this exists
-Cloud security issues are often discovered too late.
-CloudSentry is designed to run **before changes are merged**, so problems are caught early.
+Uses Python to analyze AWS IAM (read-only)
 
-## How it works (high level)
-- Runs automatically on pull requests
-- Executes a Python-based security check
-- Outputs findings to the CI logs
-- Fails the workflow when risk is found
+Generates security findings
 
-## Current status
-🚧 Initial setup  
-- Repository created  
-- GitHub Actions workflow in progress  
-- Security logic coming next  
+Fails CI when high-risk conditions are detected
 
-## Tech (intentionally minimal)
-- GitHub Actions
-- Python
-- Linux-based CI runner
+Blocks insecure changes before they reach production
 
-More tools will be added only when they are required.
+🧠 How It Works
+
+A developer pushes code or opens a pull request
+
+GitHub Actions starts a CI job on a Linux runner
+
+The repository is checked out
+
+cloudsentry.py runs
+
+CloudSentry queries AWS IAM using Boto3
+
+Findings are generated
+
+A decision is made:
+
+High risk → CI fails
+
+No high risk → CI passes
+
+🧱 Architecture Overview
+Developer
+  ↓
+GitHub Repository
+  ↓
+GitHub Actions (CI)
+  ↓
+CloudSentry (Python)
+  ↓
+Boto3 (AWS SDK)
+  ↓
+AWS IAM (Read-only)
+  ↓
+Decision Gate
+  ├─ sys.exit(1) → CI FAIL
+  └─ sys.exit(0) → CI PASS
+
+🚦 Security Logic (Current Rule)
+
+CloudSentry fails CI if any finding contains the string:
+
+"High risk"
+
+
+Example failing finding:
+
+High risk: IAM users exist in account
+
+🔐 AWS Permissions
+
+CloudSentry uses read-only AWS permissions.
+
+Minimum IAM permission required:
+
+iam:ListUsers
+
+
+AWS credentials are provided securely via GitHub Secrets.
+
+🛠️ Tools Used
+
+Python
+
+GitHub Actions
+
+AWS IAM
+
+Boto3
+
+Linux (CI runner)
+
+GitHub Secrets
+
+🚀 Project Status
+
+✅ CI pipeline working
+
+✅ Pass/fail logic implemented
+
+✅ Real AWS IAM data integrated
+
+⏭️ Next: stronger IAM risk checks
+
+📌 Why This Project Matters
+
+CloudSentry demonstrates:
+
+CI/CD security enforcement
+
+Cloud security thinking
+
+Read-only AWS analysis
+
+Policy-as-code fundamentals
