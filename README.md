@@ -115,14 +115,11 @@ GitHub Secrets
 
 ⏭️ Next: stronger IAM risk checks
 
-## 📌 Why This Project Matters
+## Running CloudSentry
 
-CloudSentry demonstrates:
+CloudSentry runs automatically via GitHub Actions on push or pull request.
 
-CI/CD security enforcement
+For local testing:
+- Set USE_MOCK_IAM = True
+- Run: python cloudsentry.py
 
-Cloud security thinking
-
-Read-only AWS analysis
-
-Policy-as-code fundamentals
