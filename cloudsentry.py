@@ -1,5 +1,13 @@
 # TODO: Replace fake findings with IAM user data using boto3
 import sys
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+
 USE_MOCK_IAM = True
 
 if not USE_MOCK_IAM:
@@ -26,14 +34,14 @@ else:
 high_risk_exists = False
 
 for finding in findings:
-  print(finding)
-  if "High risk" in finding:
-    high_risk_exists = True
-
-if high_risk_exists:
-  sys.exit(1)
+  logging.info(finding)
+  if high_risk_exists:
+    logging.error("High risk detected — failing CI")
+    sys.exit(1)
 else:
-  sys.exit(0)
+    logging.info("No high risk detected — passing CI")
+    sys.exit(0)
+
 
 
 
