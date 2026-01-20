@@ -38,7 +38,8 @@ Security decisions are enforced using exit codes, not manual review.
 
 ## 🧱 Architecture Overview
 
-<img width="666" height="404" alt="Screenshot 2026-01-18 235148" src="https://github.com/user-attachments/assets/ffa85fb4-20b4-4493-a08e-9dd6f61ab5d9" />
+<img width="1536" height="1024" alt="Jan 20, 2026, 10_32_30 AM" src="https://github.com/user-attachments/assets/26c785ca-900c-4696-83fc-b59fd2e3c867" />
+
 
 Developer Push / PR
         ↓
