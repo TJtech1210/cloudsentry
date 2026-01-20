@@ -24,7 +24,7 @@ if USE_MOCK:
         {
             "UserName": "test-admin",
             "HasAdminAccess": True,
-            "HasMFA": False
+            "HasMFA": True
         }
     ]
 else:
@@ -43,7 +43,7 @@ if USE_MOCK:
                     "FromPort": 22,
                     "ToPort": 22,
                     "IpProtocol": "tcp",
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0"
+                    "IpRanges": [{"CidrIp": "10.0.0.0/32"
 }]
                 }
             ]
