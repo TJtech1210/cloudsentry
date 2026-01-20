@@ -97,6 +97,23 @@ Linux (CI runner)
 
 GitHub Secrets
 
+## Logging & Observability
+
+CloudSentry uses Python’s built-in logging to provide clear, structured output
+during CI runs.
+
+Logs include:
+- Timestamps (when a check ran)
+- Severity levels (INFO / ERROR)
+- Human-readable findings
+
+Logging is used only for visibility.
+Pass/fail decisions are enforced separately using exit codes.
+
+This design allows CloudSentry to scale to multiple security checks without
+changing CI enforcement logic.
+
+
 ## Skills Demonstrated
 
 - Cloud security fundamentals (IAM)
