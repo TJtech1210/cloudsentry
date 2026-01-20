@@ -1,5 +1,11 @@
 # 🛡️ CloudSentry
 
+[![CI](https://github.com/TJtech1210/cloudsentry/actions/workflows/ci.yml/badge.svg)](https://github.com/TJtech1210/cloudsentry/actions)
+[![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+![Security Gate](https://img.shields.io/badge/security-CI%20Enforced-red)
+
+
 ## Overview
 
 **CloudSentry** is a CI-based cloud security gate that analyzes cloud security conditions and enforces pass/fail decisions automatically inside GitHub Actions.
