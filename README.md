@@ -34,9 +34,27 @@ Security decisions are enforced using exit codes, not manual review.
 
 <img width="666" height="404" alt="Screenshot 2026-01-18 235148" src="https://github.com/user-attachments/assets/ffa85fb4-20b4-4493-a08e-9dd6f61ab5d9" />
 
-
-Developer → CI → CloudSentry → Decision Gate
-
+Developer Push / PR
+        ↓
+GitHub Repository
+(cloudsentry.py, workflow)
+        ↓
+GitHub Actions (CI)
+- Ubuntu runner
+- Checkout repo
+- Python execution
+- AWS creds via GitHub Secrets (Read-Only)
+        ↓
+CloudSentry Scan Engine
+- Enumerate IAM resources
+- Evaluate security posture
+- Flag HIGH risk findings
+        ↓
+AWS IAM (Read-Only via Boto3)
+        ↓
+Policy Enforcement Gate
+        ├─ No HIGH findings → CI PASS (exit 0)
+        └─ HIGH findings → CI FAIL (exit 1)
 
 
 ---
