@@ -1,142 +1,109 @@
 # 🛡️ CloudSentry
 
-CloudSentry is a CI-based cloud security gate that analyzes AWS IAM state using Python and Boto3 and enforces pass/fail decisions automatically through GitHub Actions.
+## Overview
 
-## Why CloudSentry
+**CloudSentry** is a CI-based cloud security gate that analyzes cloud security conditions and enforces pass/fail decisions automatically inside GitHub Actions.
 
-CloudSentry demonstrates how cloud security controls can be enforced automatically
-inside CI/CD pipelines instead of relying on manual reviews.
+It is designed to block insecure changes before they reach deployment, not just report them after the fact.
 
-This project focuses on:
-- Preventing insecure cloud states before deployment
-- Using read-only AWS access for safety
-- Enforcing security decisions with CI pass/fail gates
+---
 
-## 🔍 What CloudSentry Does
+## 🎯 Project Goals
 
-- Runs automatically in GitHub Actions
+- Enforce cloud security rules automatically in CI/CD
+- Detect high-risk IAM and network configurations
+- Fail builds when critical security issues are found
+- Keep AWS access read-only and safe
+- Serve as a reusable security gate for larger pipelines
 
-- Uses Python to analyze AWS IAM (read-only)
+---
 
-- Generates security findings
+## 🧠 How CloudSentry Works
 
-- Fails CI when high-risk conditions are detected
+1. A push or manual trigger starts the workflow
+2. GitHub Actions spins up a Linux runner
+3. CloudSentry runs as a Python security engine
+4. Security findings are generated
+5. CI fails or passes automatically based on severity
 
-- Blocks insecure changes before they reach production
+Security decisions are enforced using exit codes, not manual review.
 
-## 🧠 How It Works
-
-- A developer pushes code or opens a pull request
-
-- GitHub Actions starts a CI job on a Linux runner
-
-- The repository is checked out
-
-- cloudsentry.py runs
-
-- CloudSentry queries AWS IAM using Boto3
-
-- Findings are generated
-
-- A decision is made:
-
-- High risk → CI fails
-
-- No high risk → CI passes
+---
 
 ## 🧱 Architecture Overview
-Developer
-  ↓
-GitHub Repository
-  ↓
-GitHub Actions (CI)
-  ↓
-CloudSentry (Python)
-  ↓
-Boto3 (AWS SDK)
-  ↓
-AWS IAM (Read-only)
-  ↓
-Decision Gate
-  ├─ sys.exit(1) → CI FAIL
-  └─ sys.exit(0) → CI PASS
 
-## 🚦 Security Logic (Current Rule)
-
-CloudSentry fails CI if any finding contains the string:
-
-"High risk"
+<img width="666" height="404" alt="Screenshot 2026-01-18 235148" src="https://github.com/user-attachments/assets/ffa85fb4-20b4-4493-a08e-9dd6f61ab5d9" />
 
 
-Example failing finding:
-
-High risk: IAM users exist in account
-
-## 🔐 AWS Permissions
-
-CloudSentry uses read-only AWS permissions.
-
-Minimum IAM permission required:
-
-iam:ListUsers
+Developer → CI → CloudSentry → Decision Gate
 
 
-AWS credentials are provided securely via GitHub Secrets.
 
-## 🛠️ Tools Used
+---
 
-Python
+## 🔍 Security Checks (Current)
 
-GitHub Actions
+CloudSentry currently evaluates:
 
-AWS IAM
+### IAM Risks
+- Admin access without MFA
 
-Boto3
+### Network Risks
+- SSH (22) open to 0.0.0.0/0
+- RDP (3389) open to 0.0.0.0/0
 
-Linux (CI runner)
+Each finding includes:
+- Resource
+- Issue description
+- Severity
+- Recommendation
 
-GitHub Secrets
+---
 
-## Logging & Observability
+## 🚦 CI Enforcement Logic
 
-CloudSentry uses Python’s built-in logging to provide clear, structured output
-during CI runs.
+- Any HIGH severity finding → ❌ CI FAIL
+- No HIGH severity findings → ✅ CI PASS
 
-Logs include:
-- Timestamps (when a check ran)
+Logging explains why a decision was made.  
+Exit codes enforce the outcome.
+
+---
+
+## 📊 Example: Failing CI Run
+
+<img width="485" height="106" alt="fail" src="https://github.com/user-attachments/assets/c602f086-5094-4e5f-a609-faa16fb8207b" />
+
+
+Example output showing high-risk IAM and network findings blocking the pipeline.
+
+---
+
+## ✅ Example: Passing CI Run
+
+<img width="401" height="61" alt="pass" src="https://github.com/user-attachments/assets/0e6046c0-a547-4475-9e2f-2c96e59a8be9" />
+
+
+Example output after fixing security issues, allowing the pipeline to continue.
+
+---
+
+## 📜 Logging & Observability
+
+CloudSentry uses Python’s built-in logging to provide:
+
+- Timestamps
 - Severity levels (INFO / ERROR)
-- Human-readable findings
+- Clear, human-readable findings
 
-Logging is used only for visibility.
-Pass/fail decisions are enforced separately using exit codes.
+Logging is used for visibility only.  
+CI enforcement is handled separately via exit codes.
 
-This design allows CloudSentry to scale to multiple security checks without
-changing CI enforcement logic.
+---
 
+## 🧪 Mocking vs Real AWS
 
-## Skills Demonstrated
+CloudSentry supports mock mode for safe testing:
 
-- Cloud security fundamentals (IAM)
-- CI/CD with GitHub Actions
-- Security automation with Python
-- Policy-as-code using exit codes
-- Safe AWS access patterns (read-only, mocked testing)
-
-## 🚀 Project Status
-
-✅ CI pipeline working
-
-✅ Pass/fail logic implemented
-
-✅ Real AWS IAM data integrated
-
-⏭️ Next: stronger IAM risk checks
-
-## Running CloudSentry
-
-CloudSentry runs automatically via GitHub Actions on push or pull request.
-
-For local testing:
-- Set USE_MOCK_IAM = True
-- Run: python cloudsentry.py
-
+```python
+USE_MOCK = True
