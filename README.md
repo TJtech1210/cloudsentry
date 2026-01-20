@@ -1,6 +1,6 @@
 # 🛡️ CloudSentry
 
-[![CI](https://github.com/TJtech1210/cloudsentry/actions/workflows/cloudsentry-ci.yml/badge.svg)](https://github.com/TJtech1210/cloudsentry/actions)
+[![CI](https://github.com/TJtech1210/cloudsentry/actions/workflows/cloudsentry-ci.yml/badge.svg?branch=main)](https://github.com/TJtech1210/cloudsentry/actions)
 [![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 ![Security Gate](https://img.shields.io/badge/security-CI%20Enforced-red)
