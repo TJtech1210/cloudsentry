@@ -24,7 +24,7 @@ if USE_MOCK:
         {
             "UserName": "test-admin",
             "HasAdminAccess": True,
-            "HasMFA": True
+            "HasMFA": False
         }
     ]
 else:
