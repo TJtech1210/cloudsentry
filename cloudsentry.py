@@ -44,7 +44,7 @@ if USE_MOCK:
                     "ToPort": 22,
                     "IpProtocol": "tcp",
                     "IpRanges": [{"CidrIp": "10.0.0.0/16"
-"}]
+}]
                 }
             ]
         }
