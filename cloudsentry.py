@@ -2,21 +2,15 @@ import sys
 import logging
 from datetime import datetime, timezone, timedelta
 
-
+# -----------------------------
+# Logging Setup
+# -----------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
 USE_MOCK = True
-
-# -----------------------------
-# AWS Clients (Real Later)
-# -----------------------------
-if not USE_MOCK:
-    import boto3
-    iam = boto3.client("iam")
-    ec2 = boto3.client("ec2")
 
 # -----------------------------
 # Mock IAM Data
@@ -34,6 +28,38 @@ if USE_MOCK:
             ]
         }
     ]
+else:
+    import boto3
+    iam = boto3.client("iam")
+    iam_users = iam.list_users().get("Users", [])
+
+# -----------------------------
+# Mock Security Group Data
+# -----------------------------
+if USE_MOCK:
+    security_groups = [
+        {
+            "GroupId": "sg-0123",
+            "GroupName": "open-ssh",
+            "IpPermissions": [
+                {
+                    "FromPort": 22,
+                    "ToPort": 22,
+                    "IpProtocol": "tcp",
+                    "IpRanges": [{"CidrIp": "10.0.0.0/32"}]
+                }
+            ]
+        }
+    ]
+else:
+    ec2 = boto3.client("ec2")
+    security_groups = ec2.describe_security_groups().get("SecurityGroups", [])
+
+# -----------------------------
+# Findings Engine  ✅ MUST BE HERE
+# -----------------------------
+findings = []
+high_risk_exists = False
 
 # -----------------------------
 # IAM Access Key Rotation Check
@@ -54,38 +80,8 @@ for user in iam_users:
                 "recommendation": "Rotate or remove unused access keys"
             })
 
-
 # -----------------------------
-# Mock Security Group Data
-# -----------------------------
-if USE_MOCK:
-    security_groups = [
-        {
-            "GroupId": "sg-0123",
-            "GroupName": "open-ssh",
-            "IpPermissions": [
-                {
-                    "FromPort": 22,
-                    "ToPort": 22,
-                    "IpProtocol": "tcp",
-                    "IpRanges": [{"CidrIp": "10.0.0.0/32"
-}]
-                }
-            ]
-        }
-    ]
-else:
-    security_groups = ec2.describe_security_groups().get("SecurityGroups", [])
-
-# -----------------------------
-# Findings Engine
-# -----------------------------
-findings = []
-high_risk_exists = False
-
-
-# -----------------------------
-# IAM Checks
+# IAM MFA Check
 # -----------------------------
 for user in iam_users:
     if user.get("HasAdminAccess") and not user.get("HasMFA"):
@@ -102,7 +98,6 @@ for user in iam_users:
 for sg in security_groups:
     for rule in sg.get("IpPermissions", []):
         from_port = rule.get("FromPort")
-        to_port = rule.get("ToPort")
 
         for ip_range in rule.get("IpRanges", []):
             cidr = ip_range.get("CidrIp")
