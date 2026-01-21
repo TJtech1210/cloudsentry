@@ -1,5 +1,7 @@
 import sys
 import logging
+from datetime import datetime, timezone, timedelta
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,11 +26,34 @@ if USE_MOCK:
         {
             "UserName": "test-admin",
             "HasAdminAccess": True,
-            "HasMFA": True
+            "HasMFA": True,
+            "AccessKeys": [
+                {
+                    "LastRotated": datetime.now(timezone.utc) - timedelta(days=120)
+                }
+            ]
         }
     ]
-else:
-    iam_users = iam.list_users().get("Users", [])
+
+# -----------------------------
+# IAM Access Key Rotation Check
+# -----------------------------
+ROTATION_THRESHOLD_DAYS = 90
+rotation_threshold = timedelta(days=ROTATION_THRESHOLD_DAYS)
+now = datetime.now(timezone.utc)
+
+for user in iam_users:
+    for key in user.get("AccessKeys", []):
+        last_rotated = key.get("LastRotated")
+
+        if last_rotated and (now - last_rotated) > rotation_threshold:
+            findings.append({
+                "resource": f"iam_user:{user['UserName']}",
+                "issue": f"Access key not rotated in over {ROTATION_THRESHOLD_DAYS} days",
+                "severity": "HIGH",
+                "recommendation": "Rotate or remove unused access keys"
+            })
+
 
 # -----------------------------
 # Mock Security Group Data
