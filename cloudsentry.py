@@ -83,6 +83,7 @@ else:
 findings = []
 high_risk_exists = False
 
+
 # -----------------------------
 # IAM Checks
 # -----------------------------
