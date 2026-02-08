@@ -9,8 +9,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
-
-USE_MOCK = True
+import os
+USE_MOCK = os.getenv("CLOUDSENTRY_MODE", "mock") == "mock"
 
 # -----------------------------
 # Mock IAM Data
@@ -20,7 +20,7 @@ if USE_MOCK:
         {
             "UserName": "test-admin",
             "HasAdminAccess": True,
-            "HasMFA": True,
+            "HasMFA": False,
             "AccessKeys": [
                 {
                     "LastRotated": datetime.now(timezone.utc) - timedelta(days=120)
@@ -31,7 +31,28 @@ if USE_MOCK:
 else:
     import boto3
     iam = boto3.client("iam")
-    iam_users = iam.list_users().get("Users", [])
+
+    iam_users = []
+
+    for user in iam.list_users()["Users"]:
+        username = user["UserName"]
+
+        mfa = iam.list_mfa_devices(UserName=username)["MFADevices"]
+        keys = iam.list_access_keys(UserName=username)["AccessKeyMetadata"]
+
+        access_keys = []
+        for key in keys:
+            access_keys.append({
+                "LastRotated": key.get("CreateDate")
+            })
+
+        iam_users.append({
+            "UserName": username,
+            "HasAdminAccess": False,  # leave false unless you resolve policies later
+            "HasMFA": bool(mfa),
+            "AccessKeys": access_keys
+        })
+
 
 # -----------------------------
 # Mock Security Group Data
