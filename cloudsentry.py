@@ -85,6 +85,12 @@ else:
 findings = []
 high_risk_exists = False
 
+severity_counts = {
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 0
+}
+
 # -----------------------------
 # IAM Access Key Rotation Check
 # -----------------------------
@@ -103,6 +109,7 @@ for user in iam_users:
                 "severity": "HIGH",
                 "recommendation": "Rotate or remove unused access keys"
             })
+            severity_counts[finding["severity"]] += 1
 
 # -----------------------------
 # IAM MFA Check
@@ -115,6 +122,7 @@ for user in iam_users:
             "severity": "HIGH",
             "recommendation": "Enable MFA or remove AdministratorAccess"
         })
+        severity_counts[finding["severity"]] += 1
 
 # -----------------------------
 # Security Group Checks
@@ -133,6 +141,7 @@ for sg in security_groups:
                     "severity": "HIGH",
                     "recommendation": "Use SSM Session Manager or restrict CIDR range"
                 })
+                severity_counts[finding["severity"]] += 1
 
 # -----------------------------
 # Evaluation + CI Gate
@@ -143,6 +152,30 @@ for finding in findings:
     )
     if finding["severity"] == "HIGH":
         high_risk_exists = True
+
+# =============================
+# WRITE JSON REPORT  ⬅️ HERE
+# =============================
+report = {
+    "tool": "CloudSentry",
+    "mode": os.getenv("CLOUDSENTRY_MODE", "mock"),
+    "scan_time": datetime.now(timezone.utc).isoformat(),
+    "summary": {
+        "total_findings": len(findings),
+        "high": severity_counts["HIGH"],
+        "medium": severity_counts["MEDIUM"],
+        "low": severity_counts["LOW"]
+    },
+    "findings": findings
+}
+
+with open("cloudsentry_report.json", "w") as f:
+    json.dump(report, f, indent=2)
+
+
+# -----------------------------
+# EXIT AFTER REPORT IS WRITTEN
+# -----------------------------
 
 if high_risk_exists:
     logging.error("High risk detected — failing CI")
