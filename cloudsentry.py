@@ -109,7 +109,7 @@ for user in iam_users:
                 "severity": "HIGH",
                 "recommendation": "Rotate or remove unused access keys"
             })
-            severity_counts[finding["severity"]] += 1
+            severity_counts["HIGH"] += 1
 
 # -----------------------------
 # IAM MFA Check
@@ -122,7 +122,8 @@ for user in iam_users:
             "severity": "HIGH",
             "recommendation": "Enable MFA or remove AdministratorAccess"
         })
-        severity_counts[finding["severity"]] += 1
+        severity_counts["HIGH"] += 1
+
 
 # -----------------------------
 # Security Group Checks
@@ -141,7 +142,8 @@ for sg in security_groups:
                     "severity": "HIGH",
                     "recommendation": "Use SSM Session Manager or restrict CIDR range"
                 })
-                severity_counts[finding["severity"]] += 1
+                severity_counts["HIGH"] += 1
+
 
 # -----------------------------
 # Evaluation + CI Gate
