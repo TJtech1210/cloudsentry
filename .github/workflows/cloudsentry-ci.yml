@@ -21,3 +21,8 @@ jobs:
 
       - name: Run CloudSentry
         run: python cloudsentry.py
+      
+      - name: Run CloudSentry (real AWS)
+        env:
+            CLOUDSENTRY_MODE: aws
+        run: python cloudsentry.py
