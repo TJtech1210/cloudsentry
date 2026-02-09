@@ -18,9 +18,6 @@ jobs:
 
       - name: Install dependencies (optional)
         run: pip install -r requirements.txt || true
-
-      - name: Run CloudSentry
-        run: python cloudsentry.py
       
       - name: Run CloudSentry (real AWS)
         env:
