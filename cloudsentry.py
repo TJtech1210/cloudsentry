@@ -1,6 +1,8 @@
 import sys
 import logging
+import os
 from datetime import datetime, timezone, timedelta
+print(f"CLOUDSENTRY_MODE={os.getenv('CLOUDSENTRY_MODE')}")
 
 # -----------------------------
 # Logging Setup
@@ -9,7 +11,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
-import os
+
 USE_MOCK = os.getenv("CLOUDSENTRY_MODE", "mock") == "mock"
 
 # -----------------------------
