@@ -2,7 +2,7 @@ import sys
 import logging
 import os
 from datetime import datetime, timezone, timedelta
-print(f"CLOUDSENTRY_MODE={os.getenv('CLOUDSENTRY_MODE')}")
+
 
 # -----------------------------
 # Logging Setup
