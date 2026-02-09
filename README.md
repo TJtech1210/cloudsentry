@@ -130,5 +130,33 @@ CI enforcement is handled separately via exit codes.
 
 CloudSentry supports mock mode for safe testing:
 
+---
+
+##🔐 CloudSentry Status (Completed)
+
+CloudSentry is now a stable, read-only AWS security scanner.
+
+What it does:
+
+-Scans real AWS resources (IAM + EC2)
+
+-Uses least-privilege IAM (no write access)
+
+-Runs locally and in GitHub Actions
+
+-Fails CI on HIGH-risk findings
+
+-Outputs cloudsentry_report.json for pipeline use
+
+-Design notes
+
+-Supports mock and aws modes via environment variables
+
+-Zero cost (read-only API calls)
+
+-Intended to act as a security gate for Secure-Infra-Pipeline
+
+##Status: frozen and production-ready.
+
 ```python
 USE_MOCK = True
