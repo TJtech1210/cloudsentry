@@ -4,7 +4,6 @@ import os
 import json
 from datetime import datetime, timezone, timedelta
 
-
 # -----------------------------
 # Logging Setup
 # -----------------------------
@@ -13,10 +12,19 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
-USE_MOCK = os.getenv("CLOUDSENTRY_MODE", "mock") == "mock"
+MODE = os.getenv("CLOUDSENTRY_MODE", "mock")
+USE_MOCK = MODE == "mock"
 
 # -----------------------------
-# Mock IAM Data
+# AWS Clients (only if needed)
+# -----------------------------
+if not USE_MOCK:
+    import boto3
+    iam = boto3.client("iam")
+    ec2 = boto3.client("ec2")
+
+# -----------------------------
+# IAM Data
 # -----------------------------
 if USE_MOCK:
     iam_users = [
@@ -32,9 +40,6 @@ if USE_MOCK:
         }
     ]
 else:
-    import boto3
-    iam = boto3.client("iam")
-
     iam_users = []
 
     for user in iam.list_users()["Users"]:
@@ -43,124 +48,100 @@ else:
         mfa = iam.list_mfa_devices(UserName=username)["MFADevices"]
         keys = iam.list_access_keys(UserName=username)["AccessKeyMetadata"]
 
-        access_keys = []
-        for key in keys:
-            access_keys.append({
-                "LastRotated": key.get("CreateDate")
-            })
+        access_keys = [{"LastRotated": k["CreateDate"]} for k in keys]
 
         iam_users.append({
             "UserName": username,
-            "HasAdminAccess": False,  # leave false unless you resolve policies later
+            "HasAdminAccess": False,
             "HasMFA": bool(mfa),
             "AccessKeys": access_keys
         })
 
-
 # -----------------------------
-# Mock Security Group Data
+# Security Groups
 # -----------------------------
 if USE_MOCK:
     security_groups = [
         {
             "GroupId": "sg-0123",
-            "GroupName": "open-ssh",
             "IpPermissions": [
                 {
                     "FromPort": 22,
-                    "ToPort": 22,
-                    "IpProtocol": "tcp",
-                    "IpRanges": [{"CidrIp": "10.0.0.0/32"}]
+                    "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
                 }
             ]
         }
     ]
 else:
-    ec2 = boto3.client("ec2")
-    security_groups = ec2.describe_security_groups().get("SecurityGroups", [])
+    security_groups = ec2.describe_security_groups()["SecurityGroups"]
 
 # -----------------------------
-# Findings Engine  ✅ MUST BE HERE
+# Findings Engine
 # -----------------------------
 findings = []
+severity_counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
 high_risk_exists = False
 
-severity_counts = {
-    "HIGH": 0,
-    "MEDIUM": 0,
-    "LOW": 0
-}
-
 # -----------------------------
-# IAM Access Key Rotation Check
+# IAM Access Key Rotation
 # -----------------------------
 ROTATION_THRESHOLD_DAYS = 90
-rotation_threshold = timedelta(days=ROTATION_THRESHOLD_DAYS)
 now = datetime.now(timezone.utc)
 
 for user in iam_users:
     for key in user.get("AccessKeys", []):
-        last_rotated = key.get("LastRotated")
-
-        if last_rotated and (now - last_rotated) > rotation_threshold:
+        if (now - key["LastRotated"]).days > ROTATION_THRESHOLD_DAYS:
             findings.append({
                 "resource": f"iam_user:{user['UserName']}",
-                "issue": f"Access key not rotated in over {ROTATION_THRESHOLD_DAYS} days",
+                "issue": "Access key not rotated in over 90 days",
                 "severity": "HIGH",
                 "recommendation": "Rotate or remove unused access keys"
             })
             severity_counts["HIGH"] += 1
 
 # -----------------------------
-# IAM MFA Check
+# IAM MFA
 # -----------------------------
 for user in iam_users:
-    if user.get("HasAdminAccess") and not user.get("HasMFA"):
+    if user["HasAdminAccess"] and not user["HasMFA"]:
         findings.append({
             "resource": f"iam_user:{user['UserName']}",
             "issue": "Admin access without MFA",
             "severity": "HIGH",
-            "recommendation": "Enable MFA or remove AdministratorAccess"
+            "recommendation": "Enable MFA"
         })
         severity_counts["HIGH"] += 1
-
 
 # -----------------------------
 # Security Group Checks
 # -----------------------------
 for sg in security_groups:
     for rule in sg.get("IpPermissions", []):
-        from_port = rule.get("FromPort")
-
-        for ip_range in rule.get("IpRanges", []):
-            cidr = ip_range.get("CidrIp")
-
-            if cidr == "0.0.0.0/0" and from_port in [22, 3389]:
-                findings.append({
-                    "resource": f"security_group:{sg['GroupId']}",
-                    "issue": f"Port {from_port} open to the world",
-                    "severity": "HIGH",
-                    "recommendation": "Use SSM Session Manager or restrict CIDR range"
-                })
-                severity_counts["HIGH"] += 1
-
+        if rule.get("FromPort") in [22, 3389]:
+            for ip in rule.get("IpRanges", []):
+                if ip.get("CidrIp") == "0.0.0.0/0":
+                    findings.append({
+                        "resource": f"security_group:{sg['GroupId']}",
+                        "issue": f"Port {rule['FromPort']} open to the world",
+                        "severity": "HIGH",
+                        "recommendation": "Restrict CIDR or use SSM"
+                    })
+                    severity_counts["HIGH"] += 1
 
 # -----------------------------
-# Evaluation + CI Gate
+# Logging
 # -----------------------------
-for finding in findings:
-    logging.info(
-        f"{finding['severity']} | {finding['resource']} | {finding['issue']}"
-    )
-    if finding["severity"] == "HIGH":
+for f in findings:
+    logging.info(f"{f['severity']} | {f['resource']} | {f['issue']}")
+    if f["severity"] == "HIGH":
         high_risk_exists = True
 
-# =============================
-# WRITE JSON REPORT  ⬅️ HERE
-# =============================
+# -----------------------------
+# JSON REPORT (ALWAYS WRITTEN)
+# -----------------------------
 report = {
     "tool": "CloudSentry",
-    "mode": os.getenv("CLOUDSENTRY_MODE", "mock"),
+    "mode": MODE,
     "scan_time": datetime.now(timezone.utc).isoformat(),
     "summary": {
         "total_findings": len(findings),
@@ -174,14 +155,12 @@ report = {
 with open("cloudsentry_report.json", "w") as f:
     json.dump(report, f, indent=2)
 
-
 # -----------------------------
-# EXIT AFTER REPORT IS WRITTEN
+# EXIT
 # -----------------------------
-
 if high_risk_exists:
     logging.error("High risk detected — failing CI")
     sys.exit(1)
-else:
-    logging.info("No high risk detected — passing CI")
-    sys.exit(0)
+
+logging.info("No high risk detected — passing CI")
+sys.exit(0)
