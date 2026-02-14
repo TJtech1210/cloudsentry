@@ -132,7 +132,7 @@ CloudSentry supports mock mode for safe testing:
 
 ---
 
-##🔐 CloudSentry Status (Completed)
+## 🔐 CloudSentry Status (Completed)
 
 CloudSentry is now a stable, read-only AWS security scanner.
 
