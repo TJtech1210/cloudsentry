@@ -1,3 +1,5 @@
-boto3
-pytest
-other-required-packages
+boto3==1.28.85
+botocore==1.31.85
+python-dateutil==2.8.2
+pytest==7.4.3
+pytest-cov==4.1.0
