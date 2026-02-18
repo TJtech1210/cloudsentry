@@ -370,12 +370,4 @@ def run_check(resources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 ---
 
-**Happy Learning! 🚀**
-
-As you continue developing CloudSentry v2, remember:
-1. Start simple, iterate gradually
-2. Test each component independently
-3. Document as you learn
-4. Security is a journey, not a destination
-
 *This document will be updated with each major v2 feature addition.*
