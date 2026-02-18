@@ -17,7 +17,6 @@ build/
 *.swo
 
 # Test files
-test_tfplan.json
 *.tfplan
 *.tfstate
 *.tfstate.backup
