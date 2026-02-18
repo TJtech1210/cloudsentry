@@ -1,6 +1,6 @@
 # CloudSentry v2 - Quick Start Guide
 
-## 🎯 What's New in v2
+##  What's New in v2
 
 CloudSentry v2 adds **Terraform Plan Scanning** - the ability to detect security issues in your infrastructure **before** deployment!
 
@@ -14,7 +14,7 @@ CloudSentry v2 adds **Terraform Plan Scanning** - the ability to detect security
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Scan a Terraform Plan
 
@@ -70,7 +70,7 @@ cat cloudsentry_report.json
 
 ---
 
-## 🔍 Current Security Checks
+##  Current Security Checks
 
 ### S3 Bucket Security
 
@@ -123,7 +123,7 @@ CloudSentry will **automatically discover and run** your new check!
 
 ---
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - **README.md** - Complete project documentation
 - **v2_LEARNING_NOTES.md** - Deep dive into Python & DevOps concepts
@@ -132,7 +132,7 @@ CloudSentry will **automatically discover and run** your new check!
 
 ---
 
-## 🧪 Running Tests
+##  Running Tests
 
 ```bash
 # Run all tests
@@ -161,7 +161,7 @@ A: CloudSentry will exit with code 0 and report zero findings.
 
 ---
 
-## 🎓 Learning Path
+##  Learning Path
 
 1. **Start here**: Run the example and explore the output
 2. **Next**: Read `v2_LEARNING_NOTES.md` for in-depth explanations
