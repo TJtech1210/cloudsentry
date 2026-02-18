@@ -12,6 +12,24 @@
 
 It is designed to block insecure changes before they reach deployment, not just report them after the fact.
 
+**NEW in v2:** CloudSentry now supports scanning Terraform plan files to detect security issues before infrastructure is deployed!
+
+---
+
+## 🚀 Features
+
+### AWS Resource Scanning (v1)
+- Scans live AWS resources (IAM users, EC2 security groups)
+- Detects misconfigured IAM access keys and MFA settings
+- Identifies overly permissive security groups
+- Runs in mock mode for testing or AWS mode for production
+
+### Terraform Plan Scanning (v2)
+- **Pre-deployment security**: Scan Terraform plans before applying changes
+- **Modular check system**: Easily add new security checks
+- **S3 Security Checks**: Detect public S3 buckets and misconfigured access blocks
+- **Clear, actionable warnings**: Each finding includes resource, issue, and recommendation
+
 ---
 
 ## 🎯 Project Goals
@@ -66,11 +84,86 @@ Policy Enforcement Gate
 
 ---
 
+## 📖 Usage
+
+### Scanning Terraform Plans
+
+CloudSentry can scan Terraform plan JSON files to detect security issues before deployment:
+
+```bash
+# Generate a Terraform plan in JSON format
+terraform plan -out=tfplan
+terraform show -json tfplan > tfplan.json
+
+# Scan the plan with CloudSentry
+python cloudsentry.py --tfplan tfplan.json
+```
+
+Example output:
+```
+2026-02-18 13:43:04,653 | INFO | Starting Terraform plan scan: tfplan.json
+2026-02-18 13:43:04,653 | INFO | Successfully loaded Terraform plan JSON
+2026-02-18 13:43:04,653 | INFO | Found 4 resource change(s) in plan
+2026-02-18 13:43:04,653 | INFO | Loading 1 check module(s): s3_checks
+2026-02-18 13:43:04,653 | WARNING | PUBLIC S3 DETECTED: aws_s3_bucket.public_bucket has ACL=public-read
+2026-02-18 13:43:04,654 | ERROR | High risk detected in Terraform plan — failing CI
+```
+
+### Scanning Live AWS Resources
+
+For scanning existing AWS infrastructure:
+
+```bash
+# Mock mode (for testing without AWS credentials)
+CLOUDSENTRY_MODE=mock python cloudsentry.py
+
+# AWS mode (requires valid AWS credentials)
+CLOUDSENTRY_MODE=aws python cloudsentry.py
+```
+
+### Understanding the Output
+
+CloudSentry generates a `cloudsentry_report.json` file with detailed findings:
+
+```json
+{
+  "tool": "CloudSentry",
+  "mode": "tfplan",
+  "scan_time": "2026-02-18T13:43:04.654232+00:00",
+  "summary": {
+    "total_findings": 2,
+    "high": 2,
+    "medium": 0,
+    "low": 0
+  },
+  "findings": [
+    {
+      "resource": "aws_s3_bucket.public_bucket",
+      "issue": "S3 bucket configured with public ACL: public-read",
+      "severity": "HIGH",
+      "recommendation": "Use private ACL and configure bucket policy..."
+    }
+  ]
+}
+```
+
+---
+
 ## 🔍 Security Checks (Current)
 
-CloudSentry currently evaluates:
+### Terraform Plan Checks (v2)
 
-### IAM Risks
+#### S3 Bucket Security
+- **Public ACL Detection**: Flags S3 buckets with `public-read` or `public-read-write` ACLs
+- **Public Access Block**: Detects S3 buckets with disabled public access block settings
+  - `block_public_acls`
+  - `block_public_policy`
+  - `ignore_public_acls`
+  - `restrict_public_buckets`
+
+### AWS Resource Checks (v1)
+
+#### IAM Risks
 - Admin access without MFA
 
 ### Network Risks
@@ -123,6 +216,49 @@ CloudSentry uses Python’s built-in logging to provide:
 
 Logging is used for visibility only.  
 CI enforcement is handled separately via exit codes.
+
+---
+
+## 🔧 Extending CloudSentry with New Checks
+
+CloudSentry v2 uses a modular architecture that makes it easy to add new security checks.
+
+### Adding a New Check Module
+
+1. Create a new file in the `checks/` directory (e.g., `checks/ec2_checks.py`)
+2. Implement a `run_check(resources)` function that:
+   - Takes a list of Terraform resources
+   - Returns a list of findings
+3. CloudSentry will automatically discover and run your new check!
+
+Example check module structure:
+
+```python
+# checks/example_checks.py
+def run_check(resources):
+    """Check for security issues in resources"""
+    findings = []
+    
+    for resource in resources:
+        resource_type = resource.get('type', '')
+        resource_address = resource.get('address', '')
+        change = resource.get('change', {})
+        after = change.get('after', {})
+        
+        # Your security logic here
+        if resource_type == 'aws_example_resource':
+            if after.get('dangerous_setting') == 'enabled':
+                findings.append({
+                    'resource': resource_address,
+                    'issue': 'Dangerous setting enabled',
+                    'severity': 'HIGH',
+                    'recommendation': 'Disable this setting'
+                })
+    
+    return findings
+```
+
+See `checks/s3_checks.py` for a complete working example.
 
 ---
 

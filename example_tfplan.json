@@ -1,0 +1,78 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.0",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.public_bucket",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "public_bucket",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-public-bucket",
+          "acl": "public-read",
+          "tags": {
+            "Environment": "dev"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket.private_bucket",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "private_bucket",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-private-bucket",
+          "acl": "private",
+          "tags": {
+            "Environment": "prod"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.bad_config",
+      "mode": "managed",
+      "type": "aws_s3_bucket_public_access_block",
+      "name": "bad_config",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-test-bucket",
+          "block_public_acls": false,
+          "block_public_policy": false,
+          "ignore_public_acls": false,
+          "restrict_public_buckets": false
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.good_config",
+      "mode": "managed",
+      "type": "aws_s3_bucket_public_access_block",
+      "name": "good_config",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-secure-bucket",
+          "block_public_acls": true,
+          "block_public_policy": true,
+          "ignore_public_acls": true,
+          "restrict_public_buckets": true
+        }
+      }
+    }
+  ]
+}
