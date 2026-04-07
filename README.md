@@ -160,3 +160,103 @@ What it does:
 
 ```python
 USE_MOCK = True
+```
+
+---
+
+## 📦 cloudsentry-cli – Terraform Plan Scanner
+
+`cloudsentry-cli` is a pip-installable CLI package that scans a **Terraform plan JSON** file for security issues **before** `terraform apply` runs.
+
+### Install
+
+```bash
+pip install cloudsentry-cli
+```
+
+### Usage
+
+```bash
+# Generate the plan JSON in your Terraform directory
+terraform plan -out plan.out
+terraform show -json plan.out > tfplan.json
+
+# Scan it – exit 1 if any HIGH or above finding is detected
+cloudsentry-cli scan --input tfplan.json
+
+# Configure the threshold and output path
+cloudsentry-cli scan --input tfplan.json --fail-on MEDIUM --output my_report.json
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--input` | *(required)* | Path to the Terraform plan JSON file |
+| `--fail-on` | `HIGH` | Minimum severity for exit 1: `LOW \| MEDIUM \| HIGH \| CRITICAL` |
+| `--output` | `cloudsentry_report.json` | Path for the JSON report |
+
+---
+
+## 🔎 How It Works – Plan JSON Scanning
+
+### Why scan the plan JSON instead of live AWS state?
+
+Terraform produces a **plan** before it changes anything. Scanning this plan
+blocks risky configuration from ever reaching production. By the time you
+scan live AWS state, the insecure resource is already deployed.
+
+The typical pipeline looks like:
+
+```
+terraform plan -out plan.out             # creates a binary plan file
+terraform show -json plan.out            # converts to tfplan.json
+cloudsentry-cli scan --input tfplan.json # EXIT 1 if risky? STOP
+terraform apply                          # only reached if CloudSentry exits 0
+```
+
+### What is `resource_changes[].change.after`?
+
+The Terraform plan JSON contains a `resource_changes` array. Each element
+describes one resource Terraform plans to **create, update, or delete**.
+
+The `change` object inside each entry has three sub-keys:
+
+| Key | Meaning |
+|-----|---------|
+| `change.before` | The resource config **right now** (null for new resources) |
+| `change.after` | The resource config as it will look **after apply** |
+| `change.actions` | What Terraform will do: `create`, `update`, `delete`, etc. |
+
+CloudSentry evaluates `change.after` because that is the **final state that
+will be deployed**. Checking the target state catches misconfigurations
+before they exist.
+
+### How do exit codes gate the pipeline?
+
+`cloudsentry-cli scan` uses standard Unix exit codes:
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | No findings at or above the `--fail-on` threshold → **pipeline continues** |
+| `1` | At least one finding meets or exceeds the threshold → **pipeline halts** |
+
+GitHub Actions (and most CI systems) treat any non-zero exit as a step
+failure and stop the job. This means `terraform apply` is **never reached**
+when CloudSentry finds a problem.
+
+---
+
+## ⚙️ Composite GitHub Action
+
+Use the built-in composite action to add scanning to any workflow in one step:
+
+```yaml
+- name: CloudSentry scan
+  uses: TJtech1210/cloudsentry/.github/actions/cloudsentry-scan@main
+  with:
+    input: terraform/tfplan.json
+    fail_on: HIGH
+    output: cloudsentry_report.json
+    version: "0.1.0"   # pin a PyPI version; omit for latest; "git" for local source
+```
+
+See `.github/workflows/terraform-pipeline.yml` for a full end-to-end example.

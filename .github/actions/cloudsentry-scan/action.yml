@@ -1,0 +1,70 @@
+name: "CloudSentry Terraform Plan Scan"
+description: >
+  Installs cloudsentry-cli and scans a Terraform plan JSON file for security
+  issues. Fails the job when findings at or above the specified severity
+  threshold are detected.
+
+inputs:
+  input:
+    description: "Path to the Terraform plan JSON file (e.g. tfplan.json)"
+    required: true
+    default: "tfplan.json"
+
+  fail_on:
+    description: >
+      Minimum severity that causes a non-zero exit (LOW | MEDIUM | HIGH | CRITICAL).
+    required: false
+    default: "HIGH"
+
+  output:
+    description: "Path for the JSON report written by cloudsentry-cli."
+    required: false
+    default: "cloudsentry_report.json"
+
+  version:
+    description: >
+      cloudsentry-cli version to install from PyPI (e.g. "0.1.0").
+      Leave empty to install the latest published release.
+      Set to "git" to install directly from the repository source
+      (useful for development / pre-release testing).
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install cloudsentry-cli
+      shell: bash
+      run: |
+        pip install --upgrade pip
+        if [ "${{ inputs.version }}" = "git" ]; then
+          echo "Installing cloudsentry-cli from repository source..."
+          pip install "${{ github.action_path }}/../../.."
+        elif [ -n "${{ inputs.version }}" ]; then
+          echo "Installing cloudsentry-cli==${{ inputs.version }} from PyPI..."
+          pip install "cloudsentry-cli==${{ inputs.version }}"
+        else
+          echo "Installing latest cloudsentry-cli from PyPI..."
+          pip install cloudsentry-cli
+        fi
+
+    - name: Run cloudsentry-cli scan
+      shell: bash
+      run: |
+        cloudsentry-cli scan \
+          --input "${{ inputs.input }}" \
+          --fail-on "${{ inputs.fail_on }}" \
+          --output "${{ inputs.output }}"
+
+    - name: Upload security report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cloudsentry-report
+        path: ${{ inputs.output }}
+        if-no-files-found: ignore

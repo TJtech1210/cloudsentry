@@ -1,0 +1,125 @@
+name: Terraform Pipeline with CloudSentry
+
+# ---------------------------------------------------------------------------
+# EXAMPLE / TEMPLATE workflow – demonstrates how to gate a Terraform apply
+# with CloudSentry in a repo that contains real Terraform code.
+#
+# This repo (cloudsentry) is the *scanner* package itself and does NOT contain
+# any Terraform source.  The workflow is therefore set to manual-only
+# (workflow_dispatch) so it does not run automatically on every push/PR and
+# fail because there is no "terraform/" directory here.
+#
+# To use this template in your own infra repo:
+#   1. Copy this file to .github/workflows/terraform-pipeline.yml
+#   2. Set TF_WORKING_DIR to your Terraform root (e.g. "infra" or ".")
+#   3. Change the push/pull_request triggers to suit your branching strategy
+#   4. Add AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY as repository secrets
+#
+# Flow:
+#   1. terraform plan  → produces plan.out (binary)
+#   2. terraform show  → converts plan.out to tfplan.json (human-readable JSON)
+#   3. CloudSentry scan → reads tfplan.json, checks resource_changes[].change.after
+#   4. If any finding severity >= threshold → exit 1 → workflow stops here
+#   5. Only if CloudSentry passes → terraform apply runs
+#
+# Why scan the plan JSON (not the live cloud state)?
+#   - The plan captures exactly what Terraform WILL change before anything is
+#     modified in AWS.  Blocking at this stage prevents risky config from ever
+#     reaching production.  Scanning live state would be too late.
+#
+# What is resource_changes[].change.after?
+#   - Each entry in resource_changes describes one resource Terraform plans to
+#     touch.  change.after is the full resource configuration as it will exist
+#     AFTER the apply.  CloudSentry evaluates this "future state" to catch
+#     problems before they are deployed.
+#
+# How do exit codes gate the pipeline?
+#   - cloudsentry-cli scan exits 0 when no findings meet the threshold.
+#   - It exits 1 when at least one finding does.
+#   - GitHub Actions treats any non-zero exit as a step failure and halts the
+#     job, so terraform apply is never reached.
+# ---------------------------------------------------------------------------
+
+on:
+  # Manual trigger only – this repo has no Terraform source to plan/apply.
+  # Change to push/pull_request triggers in your infra repo.
+  workflow_dispatch:
+
+env:
+  TF_VERSION: "1.7.0"
+  TF_WORKING_DIR: "terraform"   # adjust if your Terraform root is elsewhere
+
+jobs:
+  terraform-plan-and-scan:
+    name: Plan → Scan → Apply
+    runs-on: ubuntu-latest
+
+    # Required so terraform apply can write back to AWS in the apply step.
+    # Remove / tighten for your actual permission model.
+    permissions:
+      contents: read
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Set up Terraform
+      # -----------------------------------------------------------------------
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # -----------------------------------------------------------------------
+      # 3. Configure AWS credentials
+      #    (replace with OIDC / assume-role in production)
+      # -----------------------------------------------------------------------
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # -----------------------------------------------------------------------
+      # 4. terraform init + plan
+      # -----------------------------------------------------------------------
+      - name: Terraform init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -out=plan.out -input=false
+
+      # -----------------------------------------------------------------------
+      # 5. Convert plan binary → JSON for CloudSentry
+      # -----------------------------------------------------------------------
+      - name: Convert plan to JSON
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform show -json plan.out > tfplan.json
+
+      # -----------------------------------------------------------------------
+      # 6. CloudSentry security scan
+      #    Uses the composite action defined in .github/actions/cloudsentry-scan
+      #    Set version: "git" to test local source; set a semver for PyPI.
+      # -----------------------------------------------------------------------
+      - name: CloudSentry scan
+        uses: ./.github/actions/cloudsentry-scan
+        with:
+          input: ${{ env.TF_WORKING_DIR }}/tfplan.json
+          fail_on: HIGH
+          output: cloudsentry_report.json
+          version: "git"   # use "0.1.0" (or omit) after publishing to PyPI
+
+      # -----------------------------------------------------------------------
+      # 7. terraform apply – only runs if CloudSentry exits 0
+      # -----------------------------------------------------------------------
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve -input=false plan.out
