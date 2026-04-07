@@ -1,7 +1,19 @@
 name: Terraform Pipeline with CloudSentry
 
 # ---------------------------------------------------------------------------
-# This workflow demonstrates how to gate a Terraform apply with CloudSentry.
+# EXAMPLE / TEMPLATE workflow – demonstrates how to gate a Terraform apply
+# with CloudSentry in a repo that contains real Terraform code.
+#
+# This repo (cloudsentry) is the *scanner* package itself and does NOT contain
+# any Terraform source.  The workflow is therefore set to manual-only
+# (workflow_dispatch) so it does not run automatically on every push/PR and
+# fail because there is no "terraform/" directory here.
+#
+# To use this template in your own infra repo:
+#   1. Copy this file to .github/workflows/terraform-pipeline.yml
+#   2. Set TF_WORKING_DIR to your Terraform root (e.g. "infra" or ".")
+#   3. Change the push/pull_request triggers to suit your branching strategy
+#   4. Add AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY as repository secrets
 #
 # Flow:
 #   1. terraform plan  → produces plan.out (binary)
@@ -29,10 +41,8 @@ name: Terraform Pipeline with CloudSentry
 # ---------------------------------------------------------------------------
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  # Manual trigger only – this repo has no Terraform source to plan/apply.
+  # Change to push/pull_request triggers in your infra repo.
   workflow_dispatch:
 
 env:
