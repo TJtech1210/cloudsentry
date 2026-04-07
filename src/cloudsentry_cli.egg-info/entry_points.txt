@@ -1,2 +1,0 @@
-[console_scripts]
-cloudsentry-cli = cloudsentry_cli.cli:main
