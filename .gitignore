@@ -26,3 +26,7 @@ htmlcov/
 .vscode/
 *.swp
 *.swo
+
+# CloudSentry generated reports (uploaded as CI artifacts, not committed)
+cloudsentry_report.json
+cloudsentry-report/

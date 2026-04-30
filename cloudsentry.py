@@ -170,8 +170,12 @@ report = {
     "findings": findings
 }
 
-with open("cloudsentry_report.json", "w") as f:
+REPORT_DIR = os.getenv("CLOUDSENTRY_REPORT_DIR", "cloudsentry-report")
+os.makedirs(REPORT_DIR, exist_ok=True)
+report_path = os.path.join(REPORT_DIR, "cloudsentry_report.json")
+with open(report_path, "w") as f:
     json.dump(report, f, indent=2)
+logging.info("Report written to %s", report_path)
 
 # -----------------------------
 # EXIT
