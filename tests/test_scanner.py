@@ -161,6 +161,33 @@ class TestCheckS3PublicAcl:
         findings = check_s3_public_acl("aws_instance", "web", {"acl": "public-read"})
         assert findings == []
 
+    def test_public_read_write_is_high(self):
+        findings = check_s3_public_acl("aws_s3_bucket", "rw_bucket", {"acl": "public-read-write"})
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
+
+    # aws_s3_bucket_acl (provider v4+ standalone resource)
+    def test_s3_bucket_acl_resource_public_read_is_high(self):
+        findings = check_s3_public_acl("aws_s3_bucket_acl", "my_acl", {"acl": "public-read"})
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
+        assert findings[0]["resource"] == "aws_s3_bucket_acl.my_acl"
+        assert "public-read" in findings[0]["issue"]
+        assert "recommendation" in findings[0]
+
+    def test_s3_bucket_acl_resource_private_no_finding(self):
+        findings = check_s3_public_acl("aws_s3_bucket_acl", "safe_acl", {"acl": "private"})
+        assert findings == []
+
+    def test_s3_bucket_acl_resource_no_acl_no_finding(self):
+        findings = check_s3_public_acl("aws_s3_bucket_acl", "no_acl", {})
+        assert findings == []
+
+    def test_s3_bucket_acl_resource_public_read_write_is_high(self):
+        findings = check_s3_public_acl("aws_s3_bucket_acl", "rw_acl", {"acl": "public-read-write"})
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
+
 
 # ---------------------------------------------------------------------------
 # _is_active_change
@@ -181,6 +208,10 @@ class TestIsActiveChange:
 
     def test_create_before_destroy_is_active(self):
         assert _is_active_change(["create", "delete"]) is True
+
+    def test_replace_delete_create_is_active(self):
+        """Terraform replace uses ["delete", "create"] – must be treated as active."""
+        assert _is_active_change(["delete", "create"]) is True
 
 
 # ---------------------------------------------------------------------------
@@ -225,6 +256,22 @@ class TestScanPlan:
         ]
         findings = scan_plan(_write_plan(tmp_path, rc))
         assert findings == []
+
+    def test_replace_action_scanned(self, tmp_path):
+        """Resources with replace (["delete","create"]) must be scanned."""
+        rc = [
+            {
+                "type": "aws_s3_bucket",
+                "name": "replaced_bucket",
+                "change": {
+                    "actions": ["delete", "create"],
+                    "after": {"acl": "public-read"},
+                },
+            }
+        ]
+        findings = scan_plan(_write_plan(tmp_path, rc))
+        assert len(findings) == 1
+        assert findings[0]["severity"] == "HIGH"
 
     def test_clean_plan_no_findings(self, tmp_path):
         rc = [
