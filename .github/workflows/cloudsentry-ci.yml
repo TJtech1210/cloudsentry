@@ -54,15 +54,40 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # continue-on-error lets the upload and enforcement steps always run,
+      # even when CloudSentry exits 1 (HIGH findings detected).
       - name: Run CloudSentry (real AWS)
+        id: cloudsentry_scan
+        continue-on-error: true
         env:
           CLOUDSENTRY_MODE: aws
+          # Report files land in cloudsentry-report/ so the upload step below
+          # always has a consistent directory to reference.
+          CLOUDSENTRY_REPORT_DIR: cloudsentry-report
         run: |
           python cloudsentry.py
 
+      # Always upload the report for auditing/logging, even on scan failure.
+      # Artifact name includes the run ID so each run has a unique, retrievable artifact.
+      # if-no-files-found: warn keeps the job moving even if the report is missing,
+      # but logs a clear warning so it is not silently ignored.
       - name: Upload CloudSentry report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cloudsentry-report
-          path: cloudsentry_report.json
+          name: cloudsentry-report-${{ github.run_id }}
+          path: cloudsentry-report/
+          if-no-files-found: warn
+
+      # Re-fail the job when the scan found HIGH/CRITICAL findings so that the
+      # CI gate behaviour is preserved after the artifact has been safely uploaded.
+      # NOTE: steps.<id>.outcome reflects the raw step result BEFORE continue-on-error
+      # is applied, so it is "failure" when the command exits non-zero. The
+      # conclusion property would always be "success" here because of continue-on-error.
+      - name: Enforce scan result
+        if: always()
+        run: |
+          if [ "${{ steps.cloudsentry_scan.outcome }}" = "failure" ]; then
+            echo "CloudSentry detected HIGH risk findings — failing CI."
+            exit 1
+          fi

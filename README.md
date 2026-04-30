@@ -95,6 +95,36 @@ Exit codes enforce the outcome.
 
 ---
 
+## 📥 Report Artifacts (Auditing & Logging)
+
+CloudSentry **always** uploads a scan report as a GitHub Actions artifact, even when the job fails due to detected risk. This ensures you have a downloadable record of every scan for auditing and compliance purposes.
+
+### How to download the report
+
+1. Go to the **Actions** tab of the repository.
+2. Click the relevant workflow run (`CloudSentry Actions`).
+3. Scroll to the **Artifacts** section at the bottom of the run summary.
+4. Download `cloudsentry-report-<run-id>.zip` — it contains `cloudsentry_report.json`.
+
+The artifact name includes the run ID so every run has its own uniquely named, retrievable archive.
+
+### Artifact contents
+
+| File | Description |
+|------|-------------|
+| `cloudsentry_report.json` | Full JSON report with scan time, summary counts, and per-finding details (resource, severity, issue, recommendation) |
+
+### Threshold behaviour
+
+| Outcome | Job result | Artifact uploaded? |
+|---------|------------|--------------------|
+| No HIGH findings | ✅ PASS | ✅ Yes |
+| Any HIGH finding | ❌ FAIL | ✅ Yes (always) |
+
+The `if-no-files-found: warn` setting on the upload step prevents the upload from failing the job when the report file is unexpectedly absent, while still logging a visible warning. The "Enforce scan result" step independently handles the original scan failure regardless of whether files were found.
+
+---
+
 ## 📊 Example: Failing CI Run
 
 <img width="485" height="106" alt="fail" src="https://github.com/user-attachments/assets/c602f086-5094-4e5f-a609-faa16fb8207b" />
