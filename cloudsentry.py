@@ -42,6 +42,8 @@ if USE_MOCK:
 else:
     iam_users = []
 
+    ADMIN_POLICY_ARN = "arn:aws:iam::aws:policy/AdministratorAccess"
+
     for user in iam.list_users()["Users"]:
         username = user["UserName"]
 
@@ -50,9 +52,25 @@ else:
 
         access_keys = [{"LastRotated": k["CreateDate"]} for k in keys]
 
+        # Check direct user policy attachment
+        has_admin = any(
+            p["PolicyArn"] == ADMIN_POLICY_ARN
+            for p in iam.list_attached_user_policies(UserName=username)["AttachedPolicies"]
+        )
+
+        # Check via groups the user belongs to
+        if not has_admin:
+            for group in iam.list_groups_for_user(UserName=username)["Groups"]:
+                group_policies = iam.list_attached_group_policies(
+                    GroupName=group["GroupName"]
+                )["AttachedPolicies"]
+                if any(p["PolicyArn"] == ADMIN_POLICY_ARN for p in group_policies):
+                    has_admin = True
+                    break
+
         iam_users.append({
             "UserName": username,
-            "HasAdminAccess": False,
+            "HasAdminAccess": has_admin,
             "HasMFA": bool(mfa),
             "AccessKeys": access_keys
         })

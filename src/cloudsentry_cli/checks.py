@@ -97,10 +97,14 @@ def check_s3_public_acl(
     resource_name: str,
     after: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    """Flag S3 buckets with a public ACL."""
+    """Flag S3 buckets or ACL resources with a public ACL.
+
+    Covers both the legacy ``aws_s3_bucket`` inline ``acl`` argument and the
+    standalone ``aws_s3_bucket_acl`` resource introduced in AWS provider v4+.
+    """
     findings: list[dict[str, Any]] = []
 
-    if resource_type != "aws_s3_bucket":
+    if resource_type not in ("aws_s3_bucket", "aws_s3_bucket_acl"):
         return findings
 
     acl = after.get("acl", "")
