@@ -1,253 +1,227 @@
 # 🛡️ CloudSentry
 
 [![CI](https://github.com/TJtech1210/cloudsentry/actions/workflows/cloudsentry-ci.yml/badge.svg?branch=main)](https://github.com/TJtech1210/cloudsentry/actions)
-[![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 ![Security Gate](https://img.shields.io/badge/security-CI%20Enforced-red)
 
-
-## Overview
-
-**CloudSentry** is a CI-based cloud security gate that analyzes cloud security conditions and enforces pass/fail decisions automatically inside GitHub Actions.
-
-It is designed to block insecure changes before they reach deployment, not just report them after the fact.
+**CloudSentry is a Python CLI that scans Terraform plan JSON for security misconfigurations and fails CI automatically — blocking risky infrastructure changes before `terraform apply` ever runs.**
 
 ---
 
-## 🎯 Project Goals
+## 🚀 Demo in 60 Seconds
 
-- Enforce cloud security rules automatically in CI/CD
-- Detect high-risk IAM and network configurations
-- Fail builds when critical security issues are found
-- Keep AWS access read-only and safe
-- Serve as a reusable security gate for larger pipelines
-
----
-
-## 🧠 How CloudSentry Works
-
-1. A push or manual trigger starts the workflow
-2. GitHub Actions spins up a Linux runner
-3. CloudSentry runs as a Python security engine
-4. Security findings are generated
-5. CI fails or passes automatically based on severity
-
-Security decisions are enforced using exit codes, not manual review.
-
----
-
-## 🧱 Architecture Overview
-
-<img width="1536" height="1024" alt="Jan 20, 2026, 10_32_30 AM" src="https://github.com/user-attachments/assets/26c785ca-900c-4696-83fc-b59fd2e3c867" />
-
-
-Developer Push / PR
-        ↓
-GitHub Repository
-(cloudsentry.py, workflow)
-        ↓
-GitHub Actions (CI)
-- Ubuntu runner
-- Checkout repo
-- Python execution
-- AWS creds via GitHub Secrets (Read-Only)
-        ↓
-CloudSentry Scan Engine
-- Enumerate IAM resources
-- Evaluate security posture
-- Flag HIGH risk findings
-        ↓
-AWS IAM (Read-Only via Boto3)
-        ↓
-Policy Enforcement Gate
-        ├─ No HIGH findings → CI PASS (exit 0)
-        └─ HIGH findings → CI FAIL (exit 1)
-
-
----
-
-## 🔍 Security Checks (Current)
-
-CloudSentry currently evaluates:
-
-### IAM Risks
-- Admin access without MFA
-
-### Network Risks
-- SSH (22) open to 0.0.0.0/0
-- RDP (3389) open to 0.0.0.0/0
-
-Each finding includes:
-- Resource
-- Issue description
-- Severity
-- Recommendation
-
----
-
-## 🚦 CI Enforcement Logic
-
-- Any HIGH severity finding → ❌ CI FAIL
-- No HIGH severity findings → ✅ CI PASS
-
-Logging explains why a decision was made.  
-Exit codes enforce the outcome.
-
----
-
-## 📊 Example: Failing CI Run
-
-<img width="485" height="106" alt="fail" src="https://github.com/user-attachments/assets/c602f086-5094-4e5f-a609-faa16fb8207b" />
-
-
-Example output showing high-risk IAM and network findings blocking the pipeline.
-
----
-
-## ✅ Example: Passing CI Run
-
-<img width="401" height="61" alt="pass" src="https://github.com/user-attachments/assets/0e6046c0-a547-4475-9e2f-2c96e59a8be9" />
-
-
-Example output after fixing security issues, allowing the pipeline to continue.
-
----
-
-## 📜 Logging & Observability
-
-CloudSentry uses Python’s built-in logging to provide:
-
-- Timestamps
-- Severity levels (INFO / ERROR)
-- Clear, human-readable findings
-
-Logging is used for visibility only.  
-CI enforcement is handled separately via exit codes.
-
----
-
-## 🧪 Mocking vs Real AWS
-
-CloudSentry supports mock mode for safe testing:
-
----
-
-## 🔐 CloudSentry Status (Completed)
-
-CloudSentry is now a stable, read-only AWS security scanner.
-
-What it does:
-
--Scans real AWS resources (IAM + EC2)
-
--Uses least-privilege IAM (no write access)
-
--Runs locally and in GitHub Actions
-
--Fails CI on HIGH-risk findings
-
--Outputs cloudsentry_report.json for pipeline use
-
--Design notes
-
--Supports mock and aws modes via environment variables
-
--Zero cost (read-only API calls)
-
--Intended to act as a security gate for Secure-Infra-Pipeline
-
-## Status: frozen and production-ready.
-
-```python
-USE_MOCK = True
-```
-
----
-
-## 📦 cloudsentry-cli – Terraform Plan Scanner
-
-`cloudsentry-cli` is a pip-installable CLI package that scans a **Terraform plan JSON** file for security issues **before** `terraform apply` runs.
-
-### Install
+No AWS account or Terraform installation required. The repo includes a ready-made sample plan.
 
 ```bash
+# 1. Install
 pip install cloudsentry-cli
+
+# 2. Clone the repo to get the sample plan
+git clone https://github.com/TJtech1210/cloudsentry.git
+cd cloudsentry
+
+# 3. Scan the sample plan (contains intentional HIGH findings)
+cloudsentry-cli scan --input examples/tfplan.json
 ```
 
-### Usage
+Expected output (exit 1 — pipeline blocked):
+
+```
+============================================================
+CloudSentry CLI  v0.1.0
+Input : examples/tfplan.json
+Threshold: HIGH
+------------------------------------------------------------
+Total findings : 2
+  LOW       : 0
+  MEDIUM    : 0
+  HIGH      : 2
+  CRITICAL  : 0
+------------------------------------------------------------
+  ✖ [HIGH] aws_security_group.web – Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule
+  ✖ [HIGH] aws_s3_bucket.assets – S3 bucket ACL is set to "public-read" which allows broad access
+------------------------------------------------------------
+FAIL  2 finding(s) at or above threshold 'HIGH'.
+============================================================
+```
+
+Fix the issues and re-scan (or raise the threshold to see a passing run):
 
 ```bash
-# Generate the plan JSON in your Terraform directory
-terraform plan -out plan.out
-terraform show -json plan.out > tfplan.json
-
-# Scan it – exit 1 if any HIGH or above finding is detected
-cloudsentry-cli scan --input tfplan.json
-
-# Configure the threshold and output path
-cloudsentry-cli scan --input tfplan.json --fail-on MEDIUM --output my_report.json
+cloudsentry-cli scan --input examples/tfplan.json --fail-on CRITICAL
+# → PASS  No findings at or above threshold.   (exit 0)
 ```
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--input` | *(required)* | Path to the Terraform plan JSON file |
-| `--fail-on` | `HIGH` | Minimum severity for exit 1: `LOW \| MEDIUM \| HIGH \| CRITICAL` |
-| `--output` | `cloudsentry_report.json` | Path for the JSON report |
 
 ---
 
-## 🔎 How It Works – Plan JSON Scanning
+## 🎯 Features
 
-### Why scan the plan JSON instead of live AWS state?
+- **Terraform plan gating** — scans `resource_changes[].change.after` before anything is deployed
+- **Configurable severity threshold** — fail on `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`
+- **Extensible check registry** — add a function, register it, done; no other code changes required
+- **JSON report output** — machine-readable `cloudsentry_report.json` for downstream pipeline steps
+- **Zero external dependencies** — pure Python stdlib; install anywhere in seconds
+- **Composite GitHub Action** — drop-in one step that gates Terraform pipelines
+- **Tested** — unit and integration tests with pytest; CI enforced on every push
 
-Terraform produces a **plan** before it changes anything. Scanning this plan
-blocks risky configuration from ever reaching production. By the time you
-scan live AWS state, the insecure resource is already deployed.
+---
 
-The typical pipeline looks like:
+## 🧠 How It Works
+
+Terraform produces a plan before it changes anything. CloudSentry scans that plan so misconfigurations are caught at review time, not after deployment.
 
 ```
-terraform plan -out plan.out             # creates a binary plan file
-terraform show -json plan.out            # converts to tfplan.json
-cloudsentry-cli scan --input tfplan.json # EXIT 1 if risky? STOP
-terraform apply                          # only reached if CloudSentry exits 0
+terraform plan -out plan.out                 # 1. create binary plan
+terraform show -json plan.out > tfplan.json  # 2. export to JSON
+cloudsentry-cli scan --input tfplan.json     # 3. EXIT 1 if risky → STOP
+terraform apply                              # 4. only reached when clean
 ```
 
-### What is `resource_changes[].change.after`?
-
-The Terraform plan JSON contains a `resource_changes` array. Each element
-describes one resource Terraform plans to **create, update, or delete**.
-
-The `change` object inside each entry has three sub-keys:
+### Plan JSON anatomy
 
 | Key | Meaning |
 |-----|---------|
-| `change.before` | The resource config **right now** (null for new resources) |
-| `change.after` | The resource config as it will look **after apply** |
-| `change.actions` | What Terraform will do: `create`, `update`, `delete`, etc. |
+| `change.before`  | Current resource config (null for new resources) |
+| `change.after`   | Config that will exist **after apply** — what CloudSentry evaluates |
+| `change.actions` | `create`, `update`, `delete`, `no-op` |
 
-CloudSentry evaluates `change.after` because that is the **final state that
-will be deployed**. Checking the target state catches misconfigurations
-before they exist.
+CloudSentry only evaluates resources being **created or updated**, skipping deletions and no-ops.
 
-### How do exit codes gate the pipeline?
+### Exit codes
 
-`cloudsentry-cli scan` uses standard Unix exit codes:
-
-| Exit code | Meaning |
-|-----------|---------|
-| `0` | No findings at or above the `--fail-on` threshold → **pipeline continues** |
-| `1` | At least one finding meets or exceeds the threshold → **pipeline halts** |
-
-GitHub Actions (and most CI systems) treat any non-zero exit as a step
-failure and stop the job. This means `terraform apply` is **never reached**
-when CloudSentry finds a problem.
+| Code | Meaning |
+|------|---------|
+| `0` | No findings at or above `--fail-on` threshold → pipeline continues |
+| `1` | At least one finding meets or exceeds the threshold → pipeline halts |
 
 ---
 
-## ⚙️ Composite GitHub Action
+## 🏗️ Architecture
 
-Use the built-in composite action to add scanning to any workflow in one step:
+```
+Developer push / PR
+       │
+       ▼
+GitHub Actions (CI)
+  ├─ checkout repo
+  ├─ terraform plan → tfplan.json
+  └─ cloudsentry-cli scan ──────────────────┐
+                                            │
+                           ┌────────────────▼──────────────────┐
+                           │        CloudSentry Engine          │
+                           │  scanner.py  →  checks registry    │
+                           │  check_sg_open_ingress()           │
+                           │  check_s3_public_acl()             │
+                           │  ... (add more checks here)        │
+                           └────────────────┬──────────────────┘
+                                            │
+                              ┌─────────────┴──────────────┐
+                              │     Policy Gate             │
+                              │  findings ≥ threshold?      │
+                              │  YES → exit 1 → CI FAIL     │
+                              │  NO  → exit 0 → CI PASS     │
+                              └─────────────────────────────┘
+                                       │
+                              cloudsentry_report.json
+```
+
+---
+
+## 🔍 Security Checks
+
+| Check | Resources evaluated | Severity |
+|-------|---------------------|----------|
+| `check_sg_open_ingress` | `aws_security_group`, `aws_security_group_rule` | HIGH |
+| `check_s3_public_acl`   | `aws_s3_bucket`, `aws_s3_bucket_acl`           | HIGH |
+
+Each finding contains:
+
+```json
+{
+  "resource":       "aws_security_group.web",
+  "issue":          "Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule",
+  "severity":       "HIGH",
+  "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager."
+}
+```
+
+---
+
+## 📊 Output Format
+
+`cloudsentry_report.json` (written after every scan):
+
+```json
+{
+  "generated_at": "2025-05-01T12:00:00+00:00",
+  "input_file":   "examples/tfplan.json",
+  "fail_on":      "HIGH",
+  "outcome":      "FAIL",
+  "summary": { "total": 2, "LOW": 0, "MEDIUM": 0, "HIGH": 2, "CRITICAL": 0 },
+  "findings": [
+    {
+      "resource":       "aws_security_group.web",
+      "issue":          "Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule",
+      "severity":       "HIGH",
+      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager."
+    }
+  ]
+}
+```
+
+---
+
+## ➕ Adding New Checks
+
+1. Open `src/cloudsentry_cli/checks.py`
+2. Write a function with this signature:
+
+```python
+def check_my_rule(
+    resource_type: str,
+    resource_name: str,
+    after: dict,
+) -> list[dict]:
+    findings = []
+    if resource_type != "aws_my_resource":
+        return findings
+    if after.get("some_risky_field"):
+        findings.append({
+            "resource":       f"{resource_type}.{resource_name}",
+            "issue":          "Description of the problem",
+            "severity":       "HIGH",
+            "recommendation": "How to fix it",
+        })
+    return findings
+```
+
+3. Register it in the `CHECKS` list at the bottom of the file — **no other code changes needed**.
+
+---
+
+## 🧪 Testing
+
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=cloudsentry_cli --cov-report=term-missing
+```
+
+Tests live in `tests/test_scanner.py` and cover individual check functions plus end-to-end `scan_plan()` integration scenarios.
+
+---
+
+## ⚙️ CI Integration
+
+### Composite GitHub Action (recommended)
+
+Drop a single step into any workflow to gate Terraform:
 
 ```yaml
 - name: CloudSentry scan
@@ -259,4 +233,79 @@ Use the built-in composite action to add scanning to any workflow in one step:
     version: "0.1.0"   # pin a PyPI version; omit for latest; "git" for local source
 ```
 
-See `.github/workflows/terraform-pipeline.yml` for a full end-to-end example.
+See [`.github/workflows/terraform-pipeline.yml`](.github/workflows/terraform-pipeline.yml) for a full end-to-end pipeline example.
+
+### Raw workflow step
+
+```yaml
+- name: Install CloudSentry CLI
+  run: pip install cloudsentry-cli==0.1.0
+
+- name: Scan Terraform plan
+  run: cloudsentry-cli scan --input terraform/tfplan.json --fail-on HIGH --output cloudsentry_report.json
+
+- name: Upload security report
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: cloudsentry-report
+    path: cloudsentry_report.json
+```
+
+### CLI flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--input`    | *(required)* | Path to the Terraform plan JSON file |
+| `--fail-on`  | `HIGH`        | Minimum severity for exit 1: `LOW \| MEDIUM \| HIGH \| CRITICAL` |
+| `--output`   | `cloudsentry_report.json` | Path for the JSON report |
+
+---
+
+## 🏅 Skills Demonstrated
+
+| Skill | Where it shows up |
+|-------|-------------------|
+| **Terraform / IaC** | Understands plan JSON structure (`resource_changes`, `change.after`, `actions`) and gates the apply step |
+| **GitHub Actions** | Composite action, workflow gating, artifact upload, CI badge |
+| **Python (CLI)** | `argparse`, exit codes, stdlib-only package, `pyproject.toml` packaging |
+| **Security engineering** | Misconfiguration detection, severity classification, shift-left enforcement |
+| **Extensible design** | Check registry pattern — new rules added without touching scanner core |
+| **Testing** | `pytest` unit + integration tests; coverage reporting |
+| **CI gating** | Pipeline halts on policy violation via Unix exit codes; no manual review needed |
+| **Supply chain hygiene** | Zero runtime dependencies; pinnable PyPI version for reproducible builds |
+
+---
+
+## 📁 Repository Layout
+
+```
+cloudsentry/
+├── src/cloudsentry_cli/
+│   ├── __init__.py       # version
+│   ├── cli.py            # argparse entry point
+│   ├── scanner.py        # plan JSON loader + check dispatcher
+│   └── checks.py         # security check functions + CHECKS registry
+├── tests/
+│   └── test_scanner.py   # unit + integration tests
+├── examples/
+│   └── tfplan.json       # sample plan with intentional HIGH findings (no AWS needed)
+├── .github/
+│   ├── actions/cloudsentry-scan/action.yml   # composite action
+│   └── workflows/
+│       ├── cloudsentry-ci.yml                # library CI (lint + test)
+│       └── terraform-pipeline.yml           # end-to-end pipeline demo
+└── pyproject.toml
+```
+
+---
+
+## ⚠️ Legacy: Live AWS Scanner
+
+> **Note:** The files `cloudsentry.py` and `checks.py` at the repository root are an earlier prototype that scanned **live AWS resources** using Boto3. That version is **frozen** and kept for reference only. The primary project is `cloudsentry-cli` (in `src/`), which scans Terraform plan JSON without any AWS credentials.
+
+---
+
+## 📄 License
+
+[MIT](LICENSE)

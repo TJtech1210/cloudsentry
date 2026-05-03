@@ -1,31 +1,28 @@
 {
-  "tool": "CloudSentry",
-  "mode": "mock",
-  "scan_time": "2026-04-30T17:29:29.205379+00:00",
+  "tool": "cloudsentry-cli",
+  "version": "0.1.0",
+  "scan_time": "2026-05-03T22:41:35.784525+00:00",
+  "input": "examples/tfplan.json",
+  "fail_on": "CRITICAL",
   "summary": {
-    "total_findings": 3,
-    "high": 3,
+    "total_findings": 2,
+    "low": 0,
     "medium": 0,
-    "low": 0
+    "high": 2,
+    "critical": 0
   },
   "findings": [
     {
-      "resource": "iam_user:test-admin",
-      "issue": "Access key not rotated in over 90 days",
+      "resource": "aws_security_group.web",
+      "issue": "Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule",
       "severity": "HIGH",
-      "recommendation": "Rotate or remove unused access keys"
+      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager instead of exposing SSH/RDP."
     },
     {
-      "resource": "iam_user:test-admin",
-      "issue": "Admin access without MFA",
+      "resource": "aws_s3_bucket.assets",
+      "issue": "S3 bucket ACL is set to \"public-read\" which allows broad access",
       "severity": "HIGH",
-      "recommendation": "Enable MFA"
-    },
-    {
-      "resource": "security_group:sg-0123",
-      "issue": "Port 22 open to the world",
-      "severity": "HIGH",
-      "recommendation": "Restrict CIDR or use SSM"
+      "recommendation": "Set acl to \"private\" and use bucket policies to grant least-privilege access."
     }
   ]
 }
