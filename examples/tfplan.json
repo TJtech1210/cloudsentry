@@ -1,0 +1,89 @@
+{
+  "format_version": "1.1",
+  "terraform_version": "1.7.0",
+  "variables": {},
+  "resource_changes": [
+    {
+      "address": "aws_security_group.web",
+      "type": "aws_security_group",
+      "name": "web",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "web-sg",
+          "description": "Allow SSH and HTTP",
+          "ingress": [
+            {
+              "from_port": 22,
+              "to_port": 22,
+              "protocol": "tcp",
+              "cidr_blocks": ["0.0.0.0/0"],
+              "ipv6_cidr_blocks": [],
+              "description": "SSH from anywhere"
+            },
+            {
+              "from_port": 80,
+              "to_port": 80,
+              "protocol": "tcp",
+              "cidr_blocks": ["0.0.0.0/0"],
+              "ipv6_cidr_blocks": [],
+              "description": "HTTP"
+            }
+          ],
+          "egress": [
+            {
+              "from_port": 0,
+              "to_port": 0,
+              "protocol": "-1",
+              "cidr_blocks": ["0.0.0.0/0"],
+              "ipv6_cidr_blocks": [],
+              "description": "All outbound"
+            }
+          ],
+          "tags": {
+            "Name": "web-sg",
+            "Environment": "prod"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket.assets",
+      "type": "aws_s3_bucket",
+      "name": "assets",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-app-assets-bucket",
+          "acl": "public-read",
+          "tags": {
+            "Name": "assets",
+            "Environment": "prod"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket.logs",
+      "type": "aws_s3_bucket",
+      "name": "logs",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-app-logs-bucket",
+          "acl": "private",
+          "tags": {
+            "Name": "logs",
+            "Environment": "prod"
+          }
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {}
+  }
+}
