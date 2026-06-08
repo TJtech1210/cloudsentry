@@ -142,7 +142,16 @@ Each finding contains:
   "resource":       "aws_security_group.web",
   "issue":          "Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule",
   "severity":       "HIGH",
-  "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager."
+  "severity_index": 2,
+  "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager.",
+  "remediations": [
+    "Restrict CIDR to specific IP ranges",
+    "Use AWS Systems Manager Session Manager",
+    "Use a bastion host for administrative access"
+  ],
+  "check_id": "check_sg_open_ingress",
+  "documentation_url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html",
+  "url": "https://github.com/TJtech1210/cloudsentry"
 }
 ```
 
@@ -164,7 +173,16 @@ Each finding contains:
       "resource":       "aws_security_group.web",
       "issue":          "Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule",
       "severity":       "HIGH",
-      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager."
+      "severity_index": 2,
+      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager.",
+      "remediations": [
+        "Restrict CIDR to specific IP ranges",
+        "Use AWS Systems Manager Session Manager",
+        "Use a bastion host for administrative access"
+      ],
+      "check_id": "check_sg_open_ingress",
+      "documentation_url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html",
+      "url": "https://github.com/TJtech1210/cloudsentry"
     }
   ]
 }
