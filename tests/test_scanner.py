@@ -14,6 +14,8 @@ from cloudsentry_cli.checks import (
 )
 from cloudsentry_cli.scanner import _is_active_change, scan_plan
 
+FINDING_URL = "https://github.com/TJtech1210/cloudsentry"
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -55,6 +57,7 @@ class TestCheckSgOpenIngress:
         assert len(findings) == 1
         assert findings[0]["severity"] == "HIGH"
         assert "22" in findings[0]["issue"]
+        assert findings[0]["url"] == FINDING_URL
 
     def test_rdp_open_to_world_is_high(self):
         after = {
@@ -130,6 +133,7 @@ class TestCheckSgOpenIngress:
         }
         findings = check_sg_open_ingress("aws_security_group_rule", "allow_ssh", after)
         assert len(findings) == 1
+        assert findings[0]["url"] == FINDING_URL
 
     def test_standalone_sg_rule_egress_ignored(self):
         after = {
@@ -152,6 +156,7 @@ class TestCheckS3PublicAcl:
         findings = check_s3_public_acl("aws_s3_bucket", "my_bucket", {"acl": "public-read"})
         assert len(findings) == 1
         assert findings[0]["severity"] == "HIGH"
+        assert findings[0]["url"] == FINDING_URL
 
     def test_private_acl_no_finding(self):
         findings = check_s3_public_acl("aws_s3_bucket", "safe_bucket", {"acl": "private"})
@@ -453,3 +458,4 @@ class TestCLI:
         assert report["summary"]["total_findings"] >= 1
         assert report["summary"]["high"] >= 1
         assert isinstance(report["findings"], list)
+        assert report["findings"][0]["url"] == FINDING_URL
