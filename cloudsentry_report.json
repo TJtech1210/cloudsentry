@@ -1,7 +1,7 @@
 {
   "tool": "cloudsentry-cli",
   "version": "0.1.0",
-  "scan_time": "2026-05-03T22:41:35.784525+00:00",
+  "scan_time": "2026-06-08T16:05:00.026969+00:00",
   "input": "examples/tfplan.json",
   "fail_on": "CRITICAL",
   "summary": {
@@ -16,13 +16,31 @@
       "resource": "aws_security_group.web",
       "issue": "Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule",
       "severity": "HIGH",
-      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager instead of exposing SSH/RDP."
+      "severity_index": 2,
+      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager instead of exposing SSH/RDP.",
+      "remediations": [
+        "Restrict CIDR to specific IP ranges",
+        "Use AWS Systems Manager Session Manager",
+        "Use a bastion host for administrative access"
+      ],
+      "check_id": "check_sg_open_ingress",
+      "documentation_url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html",
+      "url": "https://github.com/TJtech1210/cloudsentry"
     },
     {
       "resource": "aws_s3_bucket.assets",
       "issue": "S3 bucket ACL is set to \"public-read\" which allows broad access",
       "severity": "HIGH",
-      "recommendation": "Set acl to \"private\" and use bucket policies to grant least-privilege access."
+      "severity_index": 2,
+      "recommendation": "Set acl to \"private\" and use bucket policies to grant least-privilege access.",
+      "remediations": [
+        "Set ACL to \"private\"",
+        "Enable S3 Block Public Access settings",
+        "Use bucket policies for least-privilege access"
+      ],
+      "check_id": "check_s3_public_acl",
+      "documentation_url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html",
+      "url": "https://github.com/TJtech1210/cloudsentry"
     }
   ]
 }

@@ -54,7 +54,15 @@ class TestCheckSgOpenIngress:
         findings = check_sg_open_ingress("aws_security_group", "example", after)
         assert len(findings) == 1
         assert findings[0]["severity"] == "HIGH"
+        assert findings[0]["severity_index"] == 2
         assert "22" in findings[0]["issue"]
+        assert findings[0]["check_id"] == "check_sg_open_ingress"
+        assert findings[0]["documentation_url"] == (
+            "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html"
+        )
+        assert findings[0]["url"] == "https://github.com/TJtech1210/cloudsentry"
+        assert isinstance(findings[0]["remediations"], list)
+        assert findings[0]["remediations"]
 
     def test_rdp_open_to_world_is_high(self):
         after = {
@@ -152,6 +160,14 @@ class TestCheckS3PublicAcl:
         findings = check_s3_public_acl("aws_s3_bucket", "my_bucket", {"acl": "public-read"})
         assert len(findings) == 1
         assert findings[0]["severity"] == "HIGH"
+        assert findings[0]["severity_index"] == 2
+        assert findings[0]["check_id"] == "check_s3_public_acl"
+        assert findings[0]["documentation_url"] == (
+            "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"
+        )
+        assert findings[0]["url"] == "https://github.com/TJtech1210/cloudsentry"
+        assert isinstance(findings[0]["remediations"], list)
+        assert findings[0]["remediations"]
 
     def test_private_acl_no_finding(self):
         findings = check_s3_public_acl("aws_s3_bucket", "safe_bucket", {"acl": "private"})
@@ -453,3 +469,9 @@ class TestCLI:
         assert report["summary"]["total_findings"] >= 1
         assert report["summary"]["high"] >= 1
         assert isinstance(report["findings"], list)
+        finding = report["findings"][0]
+        assert finding["severity_index"] == 2
+        assert finding["check_id"] == "check_sg_open_ingress"
+        assert "documentation_url" in finding
+        assert finding["url"] == "https://github.com/TJtech1210/cloudsentry"
+        assert isinstance(finding["remediations"], list)

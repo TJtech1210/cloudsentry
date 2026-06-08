@@ -8,7 +8,12 @@ Each finding has the shape::
         "resource": "<type>.<name>",
         "issue":    "<human-readable description>",
         "severity": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+        "severity_index": 0 | 1 | 2 | 3,
         "recommendation": "<fix guidance>",
+        "remediations": ["<alternative fix 1>", "<alternative fix 2>"],
+        "check_id": "<check function id>",
+        "documentation_url": "<external docs>",
+        "url": "<CloudSentry repo URL>",
     }
 
 To add a new check:
@@ -20,6 +25,9 @@ To add a new check:
 from __future__ import annotations
 
 from typing import Any
+
+REPOSITORY_URL = "https://github.com/TJtech1210/cloudsentry"
+SEVERITY_INDEX = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3}
 
 
 # ---------------------------------------------------------------------------
@@ -57,11 +65,23 @@ def check_sg_open_ingress(
                             f"(0.0.0.0/0 or ::/0) in ingress rule"
                         ),
                         "severity": "HIGH",
+                        "severity_index": SEVERITY_INDEX["HIGH"],
                         "recommendation": (
                             "Restrict the CIDR to known IP ranges or use "
                             "AWS Systems Manager Session Manager instead of "
                             "exposing SSH/RDP."
                         ),
+                        "remediations": [
+                            "Restrict CIDR to specific IP ranges",
+                            "Use AWS Systems Manager Session Manager",
+                            "Use a bastion host for administrative access",
+                        ],
+                        "check_id": "check_sg_open_ingress",
+                        "documentation_url": (
+                            "https://docs.aws.amazon.com/vpc/latest/userguide/"
+                            "VPC_SecurityGroups.html"
+                        ),
+                        "url": REPOSITORY_URL,
                     })
 
     # aws_security_group_rule (standalone resource)
@@ -83,10 +103,23 @@ def check_sg_open_ingress(
                                 f"(0.0.0.0/0 or ::/0)"
                             ),
                             "severity": "HIGH",
+                            "severity_index": SEVERITY_INDEX["HIGH"],
                             "recommendation": (
                                 "Restrict the CIDR to known IP ranges or use "
-                                "AWS Systems Manager Session Manager."
+                                "AWS Systems Manager Session Manager instead of "
+                                "exposing SSH/RDP."
                             ),
+                            "remediations": [
+                                "Restrict CIDR to specific IP ranges",
+                                "Use AWS Systems Manager Session Manager",
+                                "Use a bastion host for administrative access",
+                            ],
+                            "check_id": "check_sg_open_ingress",
+                            "documentation_url": (
+                                "https://docs.aws.amazon.com/vpc/latest/userguide/"
+                                "VPC_SecurityGroups.html"
+                            ),
+                            "url": REPOSITORY_URL,
                         })
 
     return findings
@@ -113,10 +146,22 @@ def check_s3_public_acl(
             "resource": f"{resource_type}.{resource_name}",
             "issue": f'S3 bucket ACL is set to "{acl}" which allows broad access',
             "severity": "HIGH",
+            "severity_index": SEVERITY_INDEX["HIGH"],
             "recommendation": (
                 'Set acl to "private" and use bucket policies to grant '
                 "least-privilege access."
             ),
+            "remediations": [
+                'Set ACL to "private"',
+                "Enable S3 Block Public Access settings",
+                "Use bucket policies for least-privilege access",
+            ],
+            "check_id": "check_s3_public_acl",
+            "documentation_url": (
+                "https://docs.aws.amazon.com/AmazonS3/latest/userguide/"
+                "access-control-block-public-access.html"
+            ),
+            "url": REPOSITORY_URL,
         })
 
     return findings
