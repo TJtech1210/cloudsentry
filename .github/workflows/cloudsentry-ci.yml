@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write   # required for AWS OIDC
 
     steps:
       - uses: actions/checkout@v4
