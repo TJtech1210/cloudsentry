@@ -9,6 +9,7 @@ Each finding has the shape::
         "issue":    "<human-readable description>",
         "severity": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
         "recommendation": "<fix guidance>",
+        "url": "https://github.com/TJtech1210/cloudsentry",
     }
 
 To add a new check:
@@ -20,6 +21,8 @@ To add a new check:
 from __future__ import annotations
 
 from typing import Any
+
+FINDING_URL = "https://github.com/TJtech1210/cloudsentry"
 
 
 # ---------------------------------------------------------------------------
@@ -62,6 +65,7 @@ def check_sg_open_ingress(
                             "AWS Systems Manager Session Manager instead of "
                             "exposing SSH/RDP."
                         ),
+                        "url": FINDING_URL,
                     })
 
     # aws_security_group_rule (standalone resource)
@@ -87,6 +91,7 @@ def check_sg_open_ingress(
                                 "Restrict the CIDR to known IP ranges or use "
                                 "AWS Systems Manager Session Manager."
                             ),
+                            "url": FINDING_URL,
                         })
 
     return findings
@@ -117,6 +122,7 @@ def check_s3_public_acl(
                 'Set acl to "private" and use bucket policies to grant '
                 "least-privilege access."
             ),
+            "url": FINDING_URL,
         })
 
     return findings

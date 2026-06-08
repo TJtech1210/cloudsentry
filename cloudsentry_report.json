@@ -16,13 +16,15 @@
       "resource": "aws_security_group.web",
       "issue": "Port 22 open to the world (0.0.0.0/0 or ::/0) in ingress rule",
       "severity": "HIGH",
-      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager instead of exposing SSH/RDP."
+      "recommendation": "Restrict the CIDR to known IP ranges or use AWS Systems Manager Session Manager instead of exposing SSH/RDP.",
+      "url": "https://github.com/TJtech1210/cloudsentry"
     },
     {
       "resource": "aws_s3_bucket.assets",
       "issue": "S3 bucket ACL is set to \"public-read\" which allows broad access",
       "severity": "HIGH",
-      "recommendation": "Set acl to \"private\" and use bucket policies to grant least-privilege access."
+      "recommendation": "Set acl to \"private\" and use bucket policies to grant least-privilege access.",
+      "url": "https://github.com/TJtech1210/cloudsentry"
     }
   ]
 }
